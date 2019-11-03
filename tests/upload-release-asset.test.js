@@ -96,4 +96,38 @@ describe('Upload Release Asset', () => {
     expect(core.setFailed).toHaveBeenCalledWith('Error uploading release asset');
     expect(core.setOutput).toHaveBeenCalledTimes(0);
   });
+
+  test('Mime type is resolved from file extension', async () => {
+    core.getInput = jest
+      .fn()
+      .mockReturnValueOnce('upload_url')
+      .mockReturnValueOnce('asset_path.zip')
+      .mockReturnValueOnce('asset_name');
+
+    await run();
+
+    expect(uploadReleaseAsset).toHaveBeenCalledWith({
+      url: 'upload_url',
+      headers: { 'content-type': 'application/zip', 'content-length': 527 },
+      name: 'asset_name',
+      file: content
+    });
+  });
+
+  test('Action fails if mime type could not be resolved', async () => {
+    core.getInput = jest
+      .fn()
+      .mockReturnValueOnce('upload_url')
+      .mockReturnValueOnce('asset_path')
+      .mockReturnValueOnce('asset_name');
+
+    core.setOutput = jest.fn();
+
+    core.setFailed = jest.fn();
+
+    await run();
+
+    expect(core.setFailed).toHaveBeenCalledWith('Mime type could not be resolved from file extension');
+    expect(core.setOutput).toHaveBeenCalledTimes(0);
+  });
 });
